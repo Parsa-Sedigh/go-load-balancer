@@ -3,66 +3,28 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/Parsa-Sedigh/go-load-balancer/pkg/config"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync/atomic"
+	"os"
 )
 
 var (
-	port = flag.Int("port", 8080, "where to start the load balancer")
+	port       = flag.Int("port", 8080, "where to start the load balancer")
+	configFile = flag.String("config-path", "", "The config file to supply to load balancer")
 )
 
-type Service struct {
-	Name     string
-	Replicas []string
-}
-
-// Config is a representation of the configuration given to us from a config source
-type Config struct {
-	Services []Service
-
-	// Name of the strategy to be used in load balancing between instances
-	Strategy string
-}
-
-// Server is an instance of a running server
-type Server struct {
-	url   *url.URL
-	proxy *httputil.ReverseProxy
-}
-
-type ServerList struct {
-	Servers []*Server
-
-	// the current server to forward the request to.
-	// the next server should be (current + 1) % len(Servers)
-	current uint32
-}
-
-func (sl *ServerList) Next() uint32 {
-	//return (sl.current + 1) % uint32(len(sl.Servers))
-	nxt := atomic.AddUint32(&sl.current, uint32(1))
-	lenS := uint32(len(sl.Servers))
-
-	// wrap it around whatever number of services we have
-	if nxt >= lenS {
-		nxt -= lenS
-	}
-
-	return nxt
-}
-
 type LoadBalancer struct {
-	Config     *Config
-	ServerList *ServerList
+	Config     *config.Config
+	ServerList *config.ServerList
 }
 
-func NewLoadBalancer(config *Config) *LoadBalancer {
-	servers := make([]*Server, 0)
+func NewLoadBalancer(conf *config.Config) *LoadBalancer {
+	servers := make([]*config.Server, 0)
 
-	for _, service := range config.Services {
+	for _, service := range conf.Services {
 		// TODO: Don't ignore the names
 		for _, replica := range service.Replicas {
 			url, err := url.Parse(replica)
@@ -72,18 +34,18 @@ func NewLoadBalancer(config *Config) *LoadBalancer {
 			}
 
 			proxy := httputil.NewSingleHostReverseProxy(url)
-			servers = append(servers, &Server{
-				url:   url,
-				proxy: proxy,
+			servers = append(servers, &config.Server{
+				Url:   url,
+				Proxy: proxy,
 			})
 		}
 	}
 
 	return &LoadBalancer{
-		Config: config,
-		ServerList: &ServerList{
+		Config: conf,
+		ServerList: &config.ServerList{
 			Servers: servers,
-			current: 0,
+			//Current: 0,
 		},
 	}
 }
@@ -93,18 +55,39 @@ func (l *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// host:port/service/rest/of/url, this should be load balanced(forwarded) against service named "service" and the url will be
 	// "host{i}:port{i}/rest/of/url"
 
-	log.Info("Received new request: url='%s'", r.URL)
+	log.Infof("Received new request: url='%s'", r.Host)
 
 	nxt := l.ServerList.Next()
 
+	log.Infof("next: %d", nxt)
+
 	// Load balancing(forwarding) the request to the proxy
-	l.ServerList.Servers[nxt].proxy.ServeHTTP(w, r)
+	l.ServerList.Servers[nxt].Proxy.ServeHTTP(w, r)
 }
 
 func main() {
 	flag.Parse()
 
-	conf := &Config{}
+	//conf := &config.Config{
+	//	Services: []config.Service{
+	//		{
+	//			Name:     "Test",
+	//			Replicas: []string{"http://localhost:8081", "http://localhost:8082", "http://localhost:8083"},
+	//		},
+	//	},
+	//}
+
+	file, err := os.Open(*configFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	conf, err := config.LoadConfig(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	loadBalancer := NewLoadBalancer(conf)
 
 	server := http.Server{
@@ -112,7 +95,7 @@ func main() {
 		Handler: loadBalancer,
 	}
 
-	if err := http.ListenAndServe(); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }
