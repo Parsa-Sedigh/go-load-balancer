@@ -68,5 +68,23 @@ curl localhost:8080
 ```
 
 ## Part 2
+To run the load balancer, from the root of the project run:
+```shell
+go run cmd/load_balancer/main.go --config-path ./example/config.yaml
+
+# let's run two servers for load balancing
+go run cmd/demo/test_server.go
+
+# now for running a second server, in another terminal window, run:
+go run cmd/demo/test_server.go --port 8082
+
+# in another terminal window, send some req to the load balancer server. Run it multiple times to see the actual load balancing
+curl localhost:8080
+```
+
+Currently, the selection **strategy** for everything that is related to `ServerList` is baked into the `ServerList`. So we don't have
+an abstraction for a strategy to deal with for load balancing. What's the correct way to abstract this?
+
+
 
 ## Part 3

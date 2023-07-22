@@ -4,11 +4,15 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync/atomic"
 )
 
 type Service struct {
-	Name     string   `yaml:"name"`
+	Name string `yaml:"name"`
+
+	// A prefix matcher to select service based on the path part of the url
+	/* Note(self): The matcher could be more sophisticated (i.e regex based, subdomain based), but for the purposes of simplicity, let's
+	think about this later.*/
+	Matcher  string   `yaml:"matcher"`
 	Replicas []string `yaml:"replicas"`
 }
 
@@ -31,22 +35,9 @@ func (s *Server) Forward(w http.ResponseWriter, r *http.Request) {
 }
 
 type ServerList struct {
+	// Servers are the replicas
 	Servers []*Server
 
-	// the Current server to forward the request to.
-	// the next server should be (current + 1) % len(Servers)
-	Current uint32
-}
-
-func (sl *ServerList) Next() uint32 {
-	//return (sl.current + 1) % uint32(len(sl.Servers))
-	nxt := atomic.AddUint32(&sl.Current, uint32(1))
-	lenS := uint32(len(sl.Servers))
-
-	// wrap it around whatever number of services we have
-	//if nxt >= lenS {
-	//	nxt -= lenS
-	//}
-
-	return nxt % lenS
+	// Name of the service
+	Name string
 }
