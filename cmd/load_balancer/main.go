@@ -4,47 +4,20 @@ import (
 	"flag"
 	"fmt"
 	"github.com/Parsa-Sedigh/go-load-balancer/pkg/config"
+	"github.com/Parsa-Sedigh/go-load-balancer/pkg/domain"
+	"github.com/Parsa-Sedigh/go-load-balancer/pkg/strategy"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
-	"sync/atomic"
 )
 
 var (
 	port       = flag.Int("port", 8080, "where to start the load balancer")
 	configFile = flag.String("config-path", "", "The config file to supply to load balancer")
 )
-
-type RoundRobin struct {
-	Servers *config.ServerList
-
-	// the Current server to forward the request to.
-	// the next server should be (current + 1) % len(Servers)
-	Current uint32
-}
-
-// BalancingStrategy is the load balancing abstraction that every load balancing algorithm should implement
-type BalancingStrategy interface {
-	// Every call to Next should give us the next server to forward the to
-	Next() (*config.Server, error)
-}
-
-func (r *RoundRobin) Next() (*config.Server, error) {
-	//return (sl.current + 1) % uint32(len(sl.Servers))
-
-	nxt := atomic.AddUint32(&r.Current, uint32(1))
-	lenS := uint32(len(r.Servers.Servers))
-
-	// wrap it around whatever number of services we have
-	//if nxt >= lenS {
-	//	nxt -= lenS
-	//}
-
-	return r.Servers.Servers[nxt%lenS], nil
-}
 
 type LoadBalancer struct {
 	// Config is the configuration loaded from a config file
@@ -63,11 +36,11 @@ func NewLoadBalancer(conf *config.Config) *LoadBalancer {
 	for _, service := range conf.Services {
 		// for each service replica, we're gonna create a server instance
 
-		servers := make([]*config.Server, 0)
+		servers := make([]*domain.Server, 0)
 
 		// TODO: Don't ignore the names
 		for _, replica := range service.Replicas {
-			url, err := url.Parse(replica)
+			url, err := url.Parse(replica.Url)
 			if err != nil {
 				/* We don't want to continue creating a load balancer from malformed url for replicas. */
 				log.Fatal(err)
@@ -75,15 +48,16 @@ func NewLoadBalancer(conf *config.Config) *LoadBalancer {
 
 			proxy := httputil.NewSingleHostReverseProxy(url)
 
-			servers = append(servers, &config.Server{
+			servers = append(servers, &domain.Server{
 				Url:   url,
 				Proxy: proxy,
 			})
 		}
 
 		serverMap[service.Matcher] = &config.ServerList{
-			Servers: servers,
-			Name:    service.Name,
+			Servers:  servers,
+			Name:     service.Name,
+			Strategy: strategy.LoadStrategy(service.Strategy),
 		}
 	}
 
@@ -124,12 +98,19 @@ func (l *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nxt := sl.Next()
+	next, err := sl.Strategy.Next(sl.Servers)
+	if err != nil {
+		log.Error(err)
+		w.WriteHeader(http.StatusInternalServerError)
 
-	log.Infof("next: %d", nxt)
+		return
+	}
+
+	log.Infof("Forwarding to the server = '%s'", next)
 
 	// Load balancing(forwarding) the request to the proxy
-	sl.Servers[nxt].Proxy.ServeHTTP(w, r)
+	//sl.Servers[next].Proxy.ServeHTTP(w, r)
+	next.Forward(w, r)
 }
 
 func main() {

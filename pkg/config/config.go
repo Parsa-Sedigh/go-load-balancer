@@ -1,43 +1,26 @@
 package config
 
 import (
-	"net/http"
-	"net/http/httputil"
-	"net/url"
+	"github.com/Parsa-Sedigh/go-load-balancer/pkg/domain"
+	"github.com/Parsa-Sedigh/go-load-balancer/pkg/strategy"
 )
 
-type Service struct {
-	Name string `yaml:"name"`
-
-	// A prefix matcher to select service based on the path part of the url
-	/* Note(self): The matcher could be more sophisticated (i.e regex based, subdomain based), but for the purposes of simplicity, let's
-	think about this later.*/
-	Matcher  string   `yaml:"matcher"`
-	Replicas []string `yaml:"replicas"`
-}
-
-// Config is a representation of the configuration given to us from a config source
+// Config is a representation of the configuration given to load balancer from a config source.
 type Config struct {
-	Services []Service `yaml:"services"`
+	Services []domain.Service `yaml:"services"`
 
+	// TODO: remove this.
 	// Name of the strategy to be used in load balancing between instances
 	Strategy string `yaml:"strategy"`
 }
 
-// Server is an instance of a running server
-type Server struct {
-	Url   *url.URL
-	Proxy *httputil.ReverseProxy
-}
-
-func (s *Server) Forward(w http.ResponseWriter, r *http.Request) {
-	s.Proxy.ServeHTTP(w, r)
-}
-
 type ServerList struct {
 	// Servers are the replicas
-	Servers []*Server
+	Servers []*domain.Server
 
 	// Name of the service
 	Name string
+
+	// Strategy defines how the server list is load balanced. It can never be 'nil', it should always default to a 'RoundRobin' version.
+	Strategy strategy.BalancingStrategy
 }

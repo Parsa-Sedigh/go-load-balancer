@@ -85,6 +85,6 @@ curl localhost:8080
 Currently, the selection **strategy** for everything that is related to `ServerList` is baked into the `ServerList`. So we don't have
 an abstraction for a strategy to deal with for load balancing. What's the correct way to abstract this?
 
-
-
 ## Part 3
+One way is that the config for each replica has other information like a name and a weight associated with them. So they can have a URL and some
+metadata associated with them(each).
