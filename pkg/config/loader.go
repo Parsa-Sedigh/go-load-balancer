@@ -11,7 +11,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	conf := Config{}
+	var conf Config
 
 	if err := yaml.Unmarshal(buf, &conf); err != nil {
 		return nil, err

@@ -83,7 +83,7 @@ func (s *Server) SetLiveness(value bool) bool {
 
 // IsAlive reports the liveness state of the server
 func (s *Server) IsAlive() bool {
-	s.mu.RLocker()
+	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	return s.alive

@@ -1,9 +1,9 @@
 # Sample of the simplest configuration you can write
 
-strategy: "RoundRobin"
 services:
   - name: service01
-    matcher: "RoundRobin"
+    strategy: "RoundRobin"
+    matcher: "/"
     replicas:
-      - "http://localhost:8081"
-      - "http://localhost:8082"
+      - url: "http://localhost:8081"
+      - url: "http://localhost:8082"

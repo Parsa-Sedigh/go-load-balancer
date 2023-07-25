@@ -25,8 +25,7 @@ func NewChecker(conf *domain.Config, servers []*domain.Server) (*HealthChecker, 
 }
 
 /*
-	Start keeps looping indefinitely trying to check the health of every server. The caller is responsible of creating
-
+Start keeps looping indefinitely trying to check the health of every server. The caller is responsible of creating
 the goroutine when this should run.
 */
 func (hc *HealthChecker) Start() {

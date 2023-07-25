@@ -17,7 +17,7 @@ type Config struct {
 
 type ServerList struct {
 	// Servers are the replicas
-	Servers []*domain.Server[string]
+	Servers []*domain.Server
 
 	// Name of the service
 	Name string
