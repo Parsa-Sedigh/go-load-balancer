@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/Parsa-Sedigh/go-load-balancer/pkg/domain"
+	"github.com/Parsa-Sedigh/go-load-balancer/pkg/health"
 	"github.com/Parsa-Sedigh/go-load-balancer/pkg/strategy"
 )
 
@@ -16,11 +17,14 @@ type Config struct {
 
 type ServerList struct {
 	// Servers are the replicas
-	Servers []*domain.Server
+	Servers []*domain.Server[string]
 
 	// Name of the service
 	Name string
 
 	// Strategy defines how the server list is load balanced. It can never be 'nil', it should always default to a 'RoundRobin' version.
 	Strategy strategy.BalancingStrategy
+
+	// Health checker for the servers
+	HC *health.HealthChecker
 }

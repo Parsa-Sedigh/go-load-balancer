@@ -88,3 +88,5 @@ an abstraction for a strategy to deal with for load balancing. What's the correc
 ## Part 3
 One way is that the config for each replica has other information like a name and a weight associated with them. So they can have a URL and some
 metadata associated with them(each).
+
+We will start all servers at not an alive state unless they succeed in the first health check.

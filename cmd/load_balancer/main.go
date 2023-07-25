@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Parsa-Sedigh/go-load-balancer/pkg/config"
 	"github.com/Parsa-Sedigh/go-load-balancer/pkg/domain"
+	"github.com/Parsa-Sedigh/go-load-balancer/pkg/health"
 	"github.com/Parsa-Sedigh/go-load-balancer/pkg/strategy"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -49,16 +50,28 @@ func NewLoadBalancer(conf *config.Config) *LoadBalancer {
 			proxy := httputil.NewSingleHostReverseProxy(url)
 
 			servers = append(servers, &domain.Server{
-				Url:   url,
-				Proxy: proxy,
+				Url:      url,
+				Proxy:    proxy,
+				Metadata: replica.Metadata,
 			})
+		}
+
+		checker, err := health.NewChecker(nil, servers)
+		if err != nil {
+			log.Fatal(err)
 		}
 
 		serverMap[service.Matcher] = &config.ServerList{
 			Servers:  servers,
 			Name:     service.Name,
 			Strategy: strategy.LoadStrategy(service.Strategy),
+			HC:       checker,
 		}
+	}
+
+	// start all the health checkers for all the provided matchers
+	for _, sl := range serverMap {
+		go sl.HC.Start()
 	}
 
 	return &LoadBalancer{
@@ -72,6 +85,7 @@ func NewLoadBalancer(conf *config.Config) *LoadBalancer {
 // TODO: Does it make sense to should allow default responders.
 func (l *LoadBalancer) findServiceList(reqPath string) (*config.ServerList, error) {
 	log.Infof("Trying to find matcher for request '%s'", reqPath)
+
 	for matcher, s := range l.ServerList {
 		if strings.HasPrefix(reqPath, matcher) {
 			log.Infof("Found service '%s' matching the request", s.Name)
@@ -106,9 +120,9 @@ func (l *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("Forwarding to the server = '%s'", next)
+	log.Infof("Forwarding to the server = '%s'", next.Url.Host)
 
-	// Load balancing(forwarding) the request to the proxy
+	// Load balancing and forwarding the request to the proxy
 	//sl.Servers[next].Proxy.ServeHTTP(w, r)
 	next.Forward(w, r)
 }
