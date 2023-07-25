@@ -130,8 +130,8 @@ func (w *WeightedRoundRobin) Next(servers []*domain.Server) (*domain.Server, err
 	var picked *domain.Server
 
 	for seen < len(servers) {
-		capacity := picked.GetMetaOrDefaultInt("weight", 1)
 		picked = servers[w.current]
+		capacity := picked.GetMetaOrDefaultInt("weight", 1)
 
 		if !picked.IsAlive() {
 			seen++
@@ -144,12 +144,12 @@ func (w *WeightedRoundRobin) Next(servers []*domain.Server) (*domain.Server, err
 			continue
 		}
 
-		if w.count[w.current] <= capacity {
+		if w.count[w.current] < capacity {
 			w.count[w.current]++
 
 			log.Infof("Strategy picked server '%s'", servers[w.current].Url.Host)
 
-			return servers[w.current], nil
+			return picked, nil
 		}
 
 		// server is at it's limit, reset the current server count and move on to the next server

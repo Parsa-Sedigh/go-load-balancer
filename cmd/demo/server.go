@@ -22,6 +22,8 @@ func (d *DemoServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	flag.Parse()
 
+	log.Printf("Running demo server on port '%d' ...", *port)
+
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", *port), &DemoServer{}); err != nil {
 		log.Fatal(err)
 	}
