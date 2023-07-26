@@ -1,4 +1,4 @@
-.PHONY: run_demo_servers run_round_robin run_weighted_round_robin
+.PHONY: run_round_robin run_weighted_round_robin run_demo_servers
 
 run_round_robin:
 	go run cmd/load_balancer/main.go --config-path=example/config.yaml
