@@ -7,21 +7,16 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	conf, err := LoadConfig(strings.NewReader(`
-strategy: "RoundRobin"
 services:
    - name: "test service"
      matcher: "/api/v1"
      strategy: "RoundRobin"
      replicas:
-        - "localhost:8081"
-        - "localhost:8082"
+        - url: "localhost:8081"
+        - url: "localhost:8082"
 `))
 	if err != nil {
 		t.Errorf("Error should be nil '%s'", err)
-	}
-
-	if conf.Strategy != "RoundRobin" {
-		t.Errorf("Strategy expected to equal 'RoundRobin' got '%s' instead", conf.Strategy)
 	}
 
 	if len(conf.Services) != 1 {
@@ -56,9 +51,9 @@ services:
 func TestLoadConfigWithWeightedRoundRobin(t *testing.T) {
 	conf, err := LoadConfig(strings.NewReader(`
 services:
-  - name: service1
+  - name: test service
     strategy: WeightedRoundRobin
-    matcher: "/"
+    matcher: "/api/v1"
     replicas:
       - url: localhost:8081
         metadata:
@@ -69,10 +64,6 @@ services:
 `))
 	if err != nil {
 		t.Errorf("Error should be nil '%s'", err)
-	}
-
-	if conf.Strategy != "WeightedRoundRobin" {
-		t.Errorf("Strategy expected to equal 'WeightedRoundRobin' got '%s' instead", conf.Strategy)
 	}
 
 	if len(conf.Services) != 1 {
@@ -87,7 +78,7 @@ services:
 		t.Errorf("Expected service name to be equal to 'test service' got '%s'", conf.Services[0].Replicas[0])
 	}
 
-	if conf.Services[0].Strategy != "RoundRobin" {
+	if conf.Services[0].Strategy != "WeightedRoundRobin" {
 		t.Errorf("Expected strategy name to be equal to 'RoundRobin' got '%s'", conf.Services[0].Strategy)
 	}
 
