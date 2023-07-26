@@ -3,7 +3,7 @@
 make run_demo_servers
 
 # on another terminal window
-make run_round_robin # or `make run_weighted_round_robin`
+make run_round_robin # or run `make run_weighted_round_robin`
 ```
 
 ### Notes:
