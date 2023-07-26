@@ -1,6 +1,4 @@
 ### How to run the project?
-
-TODO
 ```shell
 make run_demo_servers
 
