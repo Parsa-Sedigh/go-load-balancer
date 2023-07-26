@@ -17,9 +17,6 @@ type Replica struct {
 type Service struct {
 	Name string `yaml:"name"`
 
-	// A prefix matcher to select service based on the path part of the url
-	/* Note(self): The matcher could be more sophisticated (i.e regex based, subdomain based), but for the purposes of simplicity, let's
-	   think about this later.*/
 	Matcher string `yaml:"matcher"`
 
 	// Strategy is the load balancing strategy used for this service.
@@ -27,7 +24,7 @@ type Service struct {
 	Replicas []Replica `yaml:"replicas"`
 }
 
-// Config is a representation of the configuration given to us from a config source
+// Config is a representation of the configuration given to the load balancer from a config source
 type Config struct {
 	Services []Service `yaml:"services"`
 

@@ -80,9 +80,9 @@ func NewLoadBalancer(conf *config.Config) *LoadBalancer {
 	}
 }
 
-// findServiceList looks for the first server list that matches the reqPath(i.e matcher). Will return an error if no matcher
+// findServiceList looks for the first server list that matches the reqPath(matcher). Will return an error if no matcher
 // have been found.
-// TODO: Does it make sense to should allow default responders.
+// TODO: Does it make sense to allow default responders?
 func (l *LoadBalancer) findServiceList(reqPath string) (*config.ServerList, error) {
 	log.Infof("Trying to find matcher for request '%s'", reqPath)
 
@@ -94,11 +94,11 @@ func (l *LoadBalancer) findServiceList(reqPath string) (*config.ServerList, erro
 		}
 	}
 
-	return nil, fmt.Errorf("Could not find a matcher for url: '%s", reqPath)
+	return nil, fmt.Errorf("could not find a matcher for url: '%s", reqPath)
 }
 
 func (l *LoadBalancer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: We need to support per service forwarding, i.e this method should read the request path, let's say
+	// TODO: We need to support per service forwarding, in other words, this method should read the request path, let's say
 	// host:port/service/rest/of/url, this should be load balanced(forwarded) against service named "service" and the url will be
 	// "host{i}:port{i}/rest/of/url"
 

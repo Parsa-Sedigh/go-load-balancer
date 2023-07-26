@@ -95,9 +95,9 @@ func (r *RoundRobin) Next(servers []*domain.Server) (*domain.Server, error) {
 
 /*
 	WeightedRoundRobin is a strategy that is similar to RoundRobin strategy, the only difference is that it takes server compute power
-	into consideration. The compute power of a server is given as an integer, it represents the fraction of requests that one server
 
-can handle over.
+into consideration. The compute power of a server is given as an integer, it represents the fraction of requests that one server
+can handle over another.
 
 A RoundRobin is equivalent to WeightedRoundRobin strategy with all weights = 1
 */
@@ -173,7 +173,7 @@ no strategy matched.
 func LoadStrategy(name string) BalancingStrategy {
 	st, ok := strategies[name]
 	if !ok {
-		log.Warnf("Strategy with name '%s' not found, falling back to a RoundRobin strategy", name)
+		log.Warnf("Strategy with name '%s' not found, falling back to the RoundRobin strategy", name)
 
 		return strategies[StrategyRoundRobin]()
 	}

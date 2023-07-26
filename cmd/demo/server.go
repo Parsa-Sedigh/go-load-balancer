@@ -11,8 +11,7 @@ var (
 	port = flag.Int("port", 8081, "port to start the demo service on")
 )
 
-type DemoServer struct {
-}
+type DemoServer struct{}
 
 func (d *DemoServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
